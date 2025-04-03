@@ -2,26 +2,26 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
-
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.agent_toolkits import create_sql_agent
 
-csv_filename = "freelancer_earnings_bd.csv"
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-base_filename = os.path.splitext(csv_filename)[0]
-sql_uri = "sqlite:///" + base_filename + ".db"
+csv_filename = "freelancer_earnings_bd.csv"
 
 
 def load_csv_to_sqlite(csv_path):
+    base_filename = os.path.splitext(csv_path)[0]
+    sql_uri = "sqlite:///" + base_filename + ".db"
     engine = create_engine(sql_uri)
     df = pd.read_csv(csv_path)
     df.to_sql(name=base_filename, con=engine, if_exists="replace")
+    return sql_uri
 
 
-def create_agent():
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+def create_agent(sql_uri):
     db = SQLDatabase.from_uri(sql_uri)
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
     agent = create_sql_agent(
@@ -47,8 +47,8 @@ def run_agent(agent):
 
 def main():
     load_dotenv()
-    load_csv_to_sqlite(csv_filename)
-    agent = create_agent()
+    sql_uri = load_csv_to_sqlite(csv_filename)
+    agent = create_agent(sql_uri)
     run_agent(agent)
 
 
