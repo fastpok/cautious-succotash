@@ -2,14 +2,17 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.agent_toolkits import create_sql_agent
+from langchain_core.messages import HumanMessage, SystemMessage
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
 csv_filename = "freelancer_earnings_bd.csv"
+
+system_message = "Answer in the same language in which the question is asked."
 
 
 def load_csv_to_sqlite(csv_path):
@@ -34,15 +37,25 @@ def create_agent(sql_uri):
 
 
 def run_agent(agent):
-    print("Type 'exit' to quit")
-    while True:
-        prompt = input("Enter a prompt: ")
-        if prompt.lower() == "exit":
-            print("Exiting...")
-            break
-        else:
-            result = agent.invoke({"input", prompt})
-            print(result["output"])
+    print("Type 'exit' to quit or press Ctrl+C to exit")
+    try:
+        while True:
+            prompt = input("Enter a prompt: ")
+            if prompt.lower() == "exit":
+                print("Exiting...")
+                break
+            else:
+                result = agent.invoke(
+                    [
+                        SystemMessage(content=system_message),
+                        HumanMessage(content=prompt),
+                    ]
+                )
+                print(result)
+
+                print(result["output"])
+    except KeyboardInterrupt:
+        print("\nExiting...")
 
 
 def main():
