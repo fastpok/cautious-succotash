@@ -51,8 +51,6 @@ def run_agent(agent):
                         HumanMessage(content=prompt),
                     ]
                 )
-                print(result)
-
                 print(result["output"])
     except KeyboardInterrupt:
         print("\nExiting...")
